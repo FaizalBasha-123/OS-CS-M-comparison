@@ -8,8 +8,8 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Chosen Palette: Calm Harmony Neutrals -->
-    <!-- Application Structure Plan: The SPA is a multi-tabbed dashboard, now restructured to facilitate a direct comparison between open-source and closed-source models. A new primary filter for 'Source Type' is added to all relevant views. A new data point for 'Minimum VRAM' is added to the explorer. The tabs (Model Explorer, Performance, Efficiency & Cost, Risks, Advisor) remain, but the content within is updated to reflect the expanded dataset. This structure allows leaders to analyze the distinct advantages and trade-offs of each ecosystem based on their specific strategic priorities (e.g., performance vs. control vs. memory). -->
-    <!-- Visualization & Content Choices: Report Info -> Goal -> Viz/Presentation Method -> Interaction -> Justification. 1. Model Memory -> Goal: Show hardware requirements -> Method: New 'Min. VRAM' column in the interactive table -> Interaction: Sorting -> Justification: Provides a critical, practical metric for deployment planning. 2. Performance Gap -> Goal: Visualize the SOTA frontier -> Method: Updated Chart.js Bar/Bubble charts -> Interaction: Hover/filter -> Justification: Clearly shows the performance and efficiency differences between the two ecosystems. 3. Token/Energy Usage -> Goal: Compare operational costs -> Method: Expanded tables and charts -> Justification: Provides critical TCO data for both open and closed models. All visualizations use Chart.js (Canvas) or structured HTML/CSS, confirming NO SVG/Mermaid. -->
+    <!-- Application Structure Plan: The SPA is a multi-tabbed dashboard, now restructured to facilitate a direct comparison between open-source and closed-source models. A new primary filter for 'Source Type' is added to all relevant views. A new data point for 'Minimum VRAM' and a new 'Modification' tab have been added. The tabs (Model Explorer, Performance, Efficiency & Cost, Modification, Risks, Advisor) remain, but the content within is updated to reflect the expanded dataset. This structure allows leaders to analyze the distinct advantages and trade-offs of each ecosystem based on their specific strategic priorities (e.g., performance vs. control vs. memory vs. customizability). -->
+    <!-- Visualization & Content Choices: Report Info -> Goal -> Viz/Presentation Method -> Interaction -> Justification. 1. Modification Difficulty -> Goal: Rate ease of fine-tuning -> Method: New HTML table with color-coded ratings -> Interaction: Static view -> Justification: Provides a clear, scannable guide for developers on post-release customizability. 2. Model Memory -> Goal: Show hardware requirements -> Method: 'Min. VRAM' column in the interactive table -> Interaction: Sorting -> Justification: Provides a critical, practical metric for deployment planning. 3. Performance Gap -> Goal: Visualize the SOTA frontier -> Method: Updated Chart.js Bar/Bubble charts -> Interaction: Hover/filter -> Justification: Clearly shows the performance and efficiency differences between the two ecosystems. All visualizations use Chart.js (Canvas) or structured HTML/CSS, confirming NO SVG/Mermaid. -->
     <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #F5F5F4; color: #374151; }
@@ -42,6 +42,9 @@
             <button onclick="showView('efficiency')" class="tab-button text-sm md:text-base px-4 py-2 font-semibold rounded-md border-b-2 transition-all duration-300 tab-inactive">
                 <span class="mr-2">⚡</span>Efficiency & Cost
             </button>
+            <button onclick="showView('modification')" class="tab-button text-sm md:text-base px-4 py-2 font-semibold rounded-md border-b-2 transition-all duration-300 tab-inactive">
+                <span class="mr-2">🔧</span>Modification
+            </button>
              <button onclick="showView('risks')" class="tab-button text-sm md:text-base px-4 py-2 font-semibold rounded-md border-b-2 transition-all duration-300 tab-inactive">
                 <span class="mr-2">⚠️</span>Risks & Flaws
             </button>
@@ -57,29 +60,29 @@
         const modelData = {
             models: [
                 // Open Source Models
-                { family: 'DeepSeek', name: 'DeepSeek-R1', arch: 'MoE', params: 671, source_type: 'Open Source', context: 128, license: 'MIT', mmlu: 90.8, math: 97.3, swe_bench: 49.2, risk: 'Medium', input_tokens: 30, output_tokens: 210, energy_wh: 4.5, min_vram_gb: 96 },
-                { family: 'DeepSeek', name: 'DeepSeek-V3', arch: 'MoE', params: 671, source_type: 'Open Source', context: 128, license: 'MIT', mmlu: 87.1, math: 90.2, swe_bench: 42.0, risk: 'High', input_tokens: 30, output_tokens: 195, energy_wh: 4.2, min_vram_gb: 96 },
-                { family: 'Qwen', name: 'Qwen3-Coder', arch: 'MoE', params: 480, source_type: 'Open Source', context: 256, license: 'Apache 2.0', mmlu: 75.0, math: 70.0, swe_bench: 65.0, risk: 'Low', input_tokens: 25, output_tokens: 150, energy_wh: 3.8, min_vram_gb: 80 },
-                { family: 'Meta', name: 'Llama 3.1 405B', arch: 'Dense', params: 405, source_type: 'Open Source', context: 128, license: 'Llama 3.1 Community', mmlu: 84.4, math: 88.2, swe_bench: 35.1, risk: 'Low', input_tokens: 31, output_tokens: 175, energy_wh: 8.0, min_vram_gb: 240 },
-                { family: 'Meta', name: 'Llama 3.1 8B', arch: 'Dense', params: 8, source_type: 'Open Source', context: 128, license: 'Llama 3.1 Community', mmlu: 68.4, math: 55.0, swe_bench: 12.5, risk: 'Low', input_tokens: 31, output_tokens: 165, energy_wh: 0.15, min_vram_gb: 6 },
-                { family: 'Mistral', name: 'Mixtral 8x22B', arch: 'MoE', params: 141, source_type: 'Open Source', context: 64, license: 'Apache 2.0', mmlu: 77.8, math: 80.2, swe_bench: 30.2, risk: 'Low', input_tokens: 28, output_tokens: 155, energy_wh: 1.8, min_vram_gb: 48 },
-                { family: 'Microsoft', name: 'Phi-3-medium', arch: 'Dense', params: 14, source_type: 'Open Source', context: 128, license: 'MIT', mmlu: 76.9, math: 72.1, swe_bench: 25.8, risk: 'Low', input_tokens: 33, output_tokens: 150, energy_wh: 0.25, min_vram_gb: 10 },
-                { family: 'Stability AI', name: 'Stable Diffusion 3', arch: 'Latent Diffusion', params: 8, source_type: 'Open Source', context: null, license: 'Creator License', mmlu: null, math: null, swe_bench: null, risk: 'Medium', input_tokens: 20, output_tokens: null, energy_wh: 0.5, min_vram_gb: 16 },
-                { family: 'Meta', name: 'Llama 4 Maverick', arch: 'MoE', params: 400, source_type: 'Open Source', context: 1000, license: 'Llama 4 Community', mmlu: 85.5, math: 61.2, swe_bench: 16.0, risk: 'Medium', input_tokens: 31, output_tokens: 180, energy_wh: 3.5, min_vram_gb: 64 },
-                { family: 'Google', name: 'Gemma 2 27B', arch: 'Dense', params: 27, source_type: 'Open Source', context: 128, license: 'Gemma Terms of Use', mmlu: 75.2, math: 70.1, swe_bench: 22.1, risk: 'Medium', input_tokens: 34, output_tokens: 170, energy_wh: 0.6, min_vram_gb: 20 },
-                { family: 'Kiwi', name: 'Kiwi K2', arch: 'Dense', params: 80, source_type: 'Open Source', context: 512, license: 'Apache 2.0', mmlu: 88.1, math: 85.4, swe_bench: 45.3, risk: 'Low', input_tokens: 29, output_tokens: 160, energy_wh: 1.5, min_vram_gb: 40 },
-                { family: 'OpenAI', name: 'gpt-oss-120b', arch: 'MoE', params: 117, source_type: 'Open Source', context: 128, license: 'Apache 2.0', mmlu: 79.3, math: 72.4, swe_bench: 32.1, risk: 'High', input_tokens: 32, output_tokens: 250, energy_wh: 1.5, min_vram_gb: 60 },
-                { family: 'OpenAI', name: 'gpt-oss-20b', arch: 'MoE', params: 21, source_type: 'Open Source', context: 128, license: 'Apache 2.0', mmlu: 72.1, math: 68.0, swe_bench: 28.4, risk: 'High', input_tokens: 32, output_tokens: 240, energy_wh: 0.4, min_vram_gb: 16 },
-                { family: '01.AI', name: 'Yi-1.5-34B', arch: 'Dense', params: 34, source_type: 'Open Source', context: 4, license: 'Yi License', mmlu: 78.9, math: 75.0, swe_bench: 33.7, risk: 'Medium', input_tokens: 27, output_tokens: 165, energy_wh: 0.9, min_vram_gb: 24 },
+                { family: 'DeepSeek', name: 'DeepSeek-R1', arch: 'MoE', params: 671, source_type: 'Open Source', context: 128, license: 'MIT', mmlu: 90.8, math: 97.3, swe_bench: 49.2, risk: 'Medium', input_tokens: 30, output_tokens: 210, energy_wh: 4.5, min_vram_gb: 96, modification_difficulty: 'Hard' },
+                { family: 'DeepSeek', name: 'DeepSeek-V3', arch: 'MoE', params: 671, source_type: 'Open Source', context: 128, license: 'MIT', mmlu: 87.1, math: 90.2, swe_bench: 42.0, risk: 'High', input_tokens: 30, output_tokens: 195, energy_wh: 4.2, min_vram_gb: 96, modification_difficulty: 'Hard' },
+                { family: 'Qwen', name: 'Qwen3-Coder', arch: 'MoE', params: 480, source_type: 'Open Source', context: 256, license: 'Apache 2.0', mmlu: 75.0, math: 70.0, swe_bench: 65.0, risk: 'Low', input_tokens: 25, output_tokens: 150, energy_wh: 3.8, min_vram_gb: 80, modification_difficulty: 'Medium' },
+                { family: 'Meta', name: 'Llama 3.1 405B', arch: 'Dense', params: 405, source_type: 'Open Source', context: 128, license: 'Llama 3.1 Community', mmlu: 84.4, math: 88.2, swe_bench: 35.1, risk: 'Low', input_tokens: 31, output_tokens: 175, energy_wh: 8.0, min_vram_gb: 240, modification_difficulty: 'Easy' },
+                { family: 'Meta', name: 'Llama 3.1 8B', arch: 'Dense', params: 8, source_type: 'Open Source', context: 128, license: 'Llama 3.1 Community', mmlu: 68.4, math: 55.0, swe_bench: 12.5, risk: 'Low', input_tokens: 31, output_tokens: 165, energy_wh: 0.15, min_vram_gb: 6, modification_difficulty: 'Easy' },
+                { family: 'Mistral', name: 'Mixtral 8x22B', arch: 'MoE', params: 141, source_type: 'Open Source', context: 64, license: 'Apache 2.0', mmlu: 77.8, math: 80.2, swe_bench: 30.2, risk: 'Low', input_tokens: 28, output_tokens: 155, energy_wh: 1.8, min_vram_gb: 48, modification_difficulty: 'Easy' },
+                { family: 'Microsoft', name: 'Phi-3-medium', arch: 'Dense', params: 14, source_type: 'Open Source', context: 128, license: 'MIT', mmlu: 76.9, math: 72.1, swe_bench: 25.8, risk: 'Low', input_tokens: 33, output_tokens: 150, energy_wh: 0.25, min_vram_gb: 10, modification_difficulty: 'Easy' },
+                { family: 'Stability AI', name: 'Stable Diffusion 3', arch: 'Latent Diffusion', params: 8, source_type: 'Open Source', context: null, license: 'Creator License', mmlu: null, math: null, swe_bench: null, risk: 'Medium', input_tokens: 20, output_tokens: null, energy_wh: 0.5, min_vram_gb: 16, modification_difficulty: 'Easy' },
+                { family: 'Meta', name: 'Llama 4 Maverick', arch: 'MoE', params: 400, source_type: 'Open Source', context: 1000, license: 'Llama 4 Community', mmlu: 85.5, math: 61.2, swe_bench: 16.0, risk: 'Medium', input_tokens: 31, output_tokens: 180, energy_wh: 3.5, min_vram_gb: 64, modification_difficulty: 'Medium' },
+                { family: 'Google', name: 'Gemma 2 27B', arch: 'Dense', params: 27, source_type: 'Open Source', context: 128, license: 'Gemma Terms of Use', mmlu: 75.2, math: 70.1, swe_bench: 22.1, risk: 'Medium', input_tokens: 34, output_tokens: 170, energy_wh: 0.6, min_vram_gb: 20, modification_difficulty: 'Medium' },
+                { family: 'Kiwi', name: 'Kiwi K2', arch: 'Dense', params: 80, source_type: 'Open Source', context: 512, license: 'Apache 2.0', mmlu: 88.1, math: 85.4, swe_bench: 45.3, risk: 'Low', input_tokens: 29, output_tokens: 160, energy_wh: 1.5, min_vram_gb: 40, modification_difficulty: 'Medium' },
+                { family: 'OpenAI', name: 'gpt-oss-120b', arch: 'MoE', params: 117, source_type: 'Open Source', context: 128, license: 'Apache 2.0', mmlu: 79.3, math: 72.4, swe_bench: 32.1, risk: 'High', input_tokens: 32, output_tokens: 250, energy_wh: 1.5, min_vram_gb: 60, modification_difficulty: 'Medium' },
+                { family: 'OpenAI', name: 'gpt-oss-20b', arch: 'MoE', params: 21, source_type: 'Open Source', context: 128, license: 'Apache 2.0', mmlu: 72.1, math: 68.0, swe_bench: 28.4, risk: 'High', input_tokens: 32, output_tokens: 240, energy_wh: 0.4, min_vram_gb: 16, modification_difficulty: 'Medium' },
+                { family: '01.AI', name: 'Yi-1.5-34B', arch: 'Dense', params: 34, source_type: 'Open Source', context: 4, license: 'Yi License', mmlu: 78.9, math: 75.0, swe_bench: 33.7, risk: 'Medium', input_tokens: 27, output_tokens: 165, energy_wh: 0.9, min_vram_gb: 24, modification_difficulty: 'Medium' },
 
                 // Closed Source Models
-                { family: 'OpenAI', name: 'GPT-5 (Proj.)', arch: 'MoE', params: 2000, source_type: 'Closed Source', context: 256, license: 'Proprietary', mmlu: 96.5, math: 99.0, swe_bench: 78.0, risk: 'Low', input_tokens: 24, output_tokens: 140, energy_wh: 10.0, min_vram_gb: null },
-                { family: 'OpenAI', name: 'GPT-4.5 Turbo', arch: 'MoE', params: 1760, source_type: 'Closed Source', context: 128, license: 'Proprietary', mmlu: 94.2, math: 96.5, swe_bench: 72.3, risk: 'Low', input_tokens: 25, output_tokens: 145, energy_wh: 8.5, min_vram_gb: null },
-                { family: 'Google', name: 'Gemini 2.5 Pro', arch: 'MoE', params: 1800, source_type: 'Closed Source', context: 2000, license: 'Proprietary', mmlu: 93.5, math: 95.0, swe_bench: 68.9, risk: 'Low', input_tokens: 26, output_tokens: 150, energy_wh: 9.0, min_vram_gb: null },
-                { family: 'Anthropic', name: 'Claude 4 Opus', arch: 'Dense', params: 1500, source_type: 'Closed Source', context: 200, license: 'Proprietary', mmlu: 95.1, math: 94.0, swe_bench: 75.1, risk: 'Very Low', input_tokens: 22, output_tokens: 130, energy_wh: 12.0, min_vram_gb: null },
-                { family: 'Anthropic', name: 'Claude 3.5 Sonnet', arch: 'Dense', params: 200, source_type: 'Closed Source', context: 200, license: 'Proprietary', mmlu: 92.0, math: 90.0, swe_bench: 70.5, risk: 'Very Low', input_tokens: 23, output_tokens: 135, energy_wh: 3.0, min_vram_gb: null },
-                { family: 'Zhipu AI', name: 'GLM-4.5-Turbo', arch: 'MoE', params: 1000, source_type: 'Closed Source', context: 128, license: 'Proprietary', mmlu: 91.5, math: 92.0, swe_bench: 65.2, risk: 'Medium', input_tokens: 28, output_tokens: 160, energy_wh: 7.0, min_vram_gb: null },
-                { family: 'Zhipu AI', name: 'GLM-4.5-Air', arch: 'Dense', params: 150, source_type: 'Closed Source', context: 128, license: 'Proprietary', mmlu: 89.0, math: 88.5, swe_bench: 60.1, risk: 'Medium', input_tokens: 27, output_tokens: 155, energy_wh: 2.5, min_vram_gb: null },
+                { family: 'OpenAI', name: 'GPT-5 (Proj.)', arch: 'MoE', params: 2000, source_type: 'Closed Source', context: 256, license: 'Proprietary', mmlu: 96.5, math: 99.0, swe_bench: 78.0, risk: 'Low', input_tokens: 24, output_tokens: 140, energy_wh: 10.0, min_vram_gb: null, modification_difficulty: null },
+                { family: 'OpenAI', name: 'GPT-4.5 Turbo', arch: 'MoE', params: 1760, source_type: 'Closed Source', context: 128, license: 'Proprietary', mmlu: 94.2, math: 96.5, swe_bench: 72.3, risk: 'Low', input_tokens: 25, output_tokens: 145, energy_wh: 8.5, min_vram_gb: null, modification_difficulty: null },
+                { family: 'Google', name: 'Gemini 2.5 Pro', arch: 'MoE', params: 1800, source_type: 'Closed Source', context: 2000, license: 'Proprietary', mmlu: 93.5, math: 95.0, swe_bench: 68.9, risk: 'Low', input_tokens: 26, output_tokens: 150, energy_wh: 9.0, min_vram_gb: null, modification_difficulty: null },
+                { family: 'Anthropic', name: 'Claude 4 Opus', arch: 'Dense', params: 1500, source_type: 'Closed Source', context: 200, license: 'Proprietary', mmlu: 95.1, math: 94.0, swe_bench: 75.1, risk: 'Very Low', input_tokens: 22, output_tokens: 130, energy_wh: 12.0, min_vram_gb: null, modification_difficulty: null },
+                { family: 'Anthropic', name: 'Claude 3.5 Sonnet', arch: 'Dense', params: 200, source_type: 'Closed Source', context: 200, license: 'Proprietary', mmlu: 92.0, math: 90.0, swe_bench: 70.5, risk: 'Very Low', input_tokens: 23, output_tokens: 135, energy_wh: 3.0, min_vram_gb: null, modification_difficulty: null },
+                { family: 'Zhipu AI', name: 'GLM-4.5-Turbo', arch: 'MoE', params: 1000, source_type: 'Closed Source', context: 128, license: 'Proprietary', mmlu: 91.5, math: 92.0, swe_bench: 65.2, risk: 'Medium', input_tokens: 28, output_tokens: 160, energy_wh: 7.0, min_vram_gb: null, modification_difficulty: null },
+                { family: 'Zhipu AI', name: 'GLM-4.5-Air', arch: 'Dense', params: 150, source_type: 'Closed Source', context: 128, license: 'Proprietary', mmlu: 89.0, math: 88.5, swe_bench: 60.1, risk: 'Medium', input_tokens: 27, output_tokens: 155, energy_wh: 2.5, min_vram_gb: null, modification_difficulty: null },
             ],
             recommendations: {
                 max_perf: { title: "Absolute Maximum Performance", model: "OpenAI GPT-5 / Claude 4 Opus", summary: "For tasks where state-of-the-art performance is the only metric that matters, the leading proprietary models are the top choice. They offer the highest accuracy across reasoning, math, and coding benchmarks.", caveats: "This comes at the highest cost, with zero transparency or control over the underlying model architecture and training data." },
@@ -189,6 +192,38 @@
                                     </tbody>
                                 </table>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            `,
+            modification: `
+                <div class="fade-in">
+                    <div class="text-center mb-12">
+                        <h2 class="text-3xl font-bold text-stone-800">Modification & Fine-Tuning Difficulty</h2>
+                        <p class="mt-2 max-w-3xl mx-auto text-stone-600">A key advantage of open-source models is the ability to customize them. This rating assesses the difficulty of fine-tuning each model, based on community support, available tools (e.g., LoRA scripts), and architectural complexity.</p>
+                    </div>
+                    <div class="card p-6">
+                         <div class="overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead class="border-b-2 border-stone-300">
+                                    <tr><th class="p-3">Model</th><th class="p-3 text-center">Difficulty Rating</th></tr>
+                                </thead>
+                                <tbody>
+                                    ${modelData.models.filter(m => m.source_type === 'Open Source').sort((a,b) => a.name.localeCompare(b.name)).map(m => `
+                                        <tr class="border-b border-stone-200 hover:bg-stone-50">
+                                            <td class="p-3 font-semibold">${m.name}</td>
+                                            <td class="p-3 text-center">
+                                                <span class="px-3 py-1 text-sm rounded-full font-medium ${
+                                                    m.modification_difficulty === 'Hard' ? 'bg-red-100 text-red-800' :
+                                                    m.modification_difficulty === 'Medium' ? 'bg-amber-100 text-amber-800' :
+                                                    m.modification_difficulty === 'Very Hard' ? 'bg-purple-100 text-purple-800' :
+                                                    'bg-green-100 text-green-800'
+                                                }">${m.modification_difficulty}</span>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
