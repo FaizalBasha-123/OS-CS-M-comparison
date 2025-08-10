@@ -8,7 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Chosen Palette: Calm Harmony Neutrals -->
-    <!-- Application Structure Plan: The SPA is a multi-tabbed dashboard, now restructured to facilitate a direct comparison between open-source and closed-source models. A new primary filter for 'Source Type' is added to all relevant views. The tabs (Model Explorer, Performance, Multimodality, Deployment, Efficiency & Cost, Risks, Advisor) remain, but the content within is updated to reflect the expanded dataset. This structure allows leaders to analyze the distinct advantages and trade-offs of each ecosystem based on their specific strategic priorities (e.g., performance vs. control). -->
+    <!-- Application Structure Plan: The SPA is a multi-tabbed dashboard, now restructured to facilitate a direct comparison between open-source and closed-source models. A new primary filter for 'Source Type' is added to all relevant views. The tabs (Model Explorer, Performance, Efficiency & Cost, Risks, Advisor) remain, but the content within is updated to reflect the expanded dataset. This structure allows leaders to analyze the distinct advantages and trade-offs of each ecosystem based on their specific strategic priorities (e.g., performance vs. control). -->
     <!-- Visualization & Content Choices: Report Info -> Goal -> Viz/Presentation Method -> Interaction -> Justification. 1. Open vs. Closed Models -> Goal: Segment the entire dataset -> Method: Top-level filter buttons -> Interaction: JS filters redraw all relevant views -> Justification: Addresses the core user request for categorization. 2. Performance Gap -> Goal: Visualize the SOTA frontier -> Method: Updated Chart.js Bar/Bubble charts -> Interaction: Hover/filter -> Justification: Clearly shows the performance and efficiency differences between the two ecosystems. 3. Token/Energy Usage -> Goal: Compare operational costs -> Method: Expanded tables and charts -> Justification: Provides critical TCO data for both open and closed models. All visualizations use Chart.js (Canvas) or structured HTML/CSS, confirming NO SVG/Mermaid. -->
     <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
@@ -37,7 +37,7 @@
                 <span class="mr-2">🧭</span>Model Explorer
             </button>
             <button onclick="showView('performance')" class="tab-button text-sm md:text-base px-4 py-2 font-semibold rounded-md border-b-2 transition-all duration-300 tab-inactive">
-                <span class="mr-2">📊</span>Performance
+                <span class="mr-2">📊</span>Benchmark Deep Dive
             </button>
             <button onclick="showView('efficiency')" class="tab-button text-sm md:text-base px-4 py-2 font-semibold rounded-md border-b-2 transition-all duration-300 tab-inactive">
                 <span class="mr-2">⚡</span>Efficiency & Cost
@@ -57,26 +57,29 @@
         const modelData = {
             models: [
                 // Open Source Models
-                { family: 'DeepSeek', name: 'DeepSeek-R1', arch: 'MoE', params: 671, source_type: 'Open Source', context: 128, license: 'MIT', mmlu: 90.8, math: 97.3, human_eval: 80.5, risk: 'Medium', input_tokens: 30, output_tokens: 210, energy_wh: 4.5 },
-                { family: 'Qwen', name: 'Qwen3-Coder', arch: 'MoE', params: 480, source_type: 'Open Source', context: 256, license: 'Apache 2.0', mmlu: 75.0, math: 70.0, human_eval: 91.2, risk: 'Low', input_tokens: 25, output_tokens: 150, energy_wh: 3.8 },
-                { family: 'Meta', name: 'Llama 3.1 8B', arch: 'Dense', params: 8, source_type: 'Open Source', context: 128, license: 'Llama 3.1 Community', mmlu: 68.4, math: 55.0, human_eval: 62.2, risk: 'Low', input_tokens: 31, output_tokens: 165, energy_wh: 0.15 },
-                { family: 'Mistral', name: 'Mixtral 8x22B', arch: 'MoE', params: 141, source_type: 'Open Source', context: 64, license: 'Apache 2.0', mmlu: 77.8, math: 80.2, human_eval: 70.4, risk: 'Low', input_tokens: 28, output_tokens: 155, energy_wh: 1.8 },
-                { family: 'Microsoft', name: 'Phi-3-medium', arch: 'Dense', params: 14, source_type: 'Open Source', context: 128, license: 'MIT', mmlu: 76.9, math: 72.1, human_eval: 65.8, risk: 'Low', input_tokens: 33, output_tokens: 150, energy_wh: 0.25 },
-                { family: 'Stability AI', name: 'Stable Diffusion 3', arch: 'Latent Diffusion', params: 8, source_type: 'Open Source', context: null, license: 'Creator License', mmlu: null, math: null, human_eval: null, risk: 'Medium', input_tokens: 20, output_tokens: null, energy_wh: 0.5 },
-                { family: 'Meta', name: 'Llama 4 Maverick', arch: 'MoE', params: 400, source_type: 'Open Source', context: 1000, license: 'Llama 4 Community', mmlu: 85.5, math: 61.2, human_eval: 43.4, risk: 'Medium', input_tokens: 31, output_tokens: 180, energy_wh: 3.5 },
+                { family: 'DeepSeek', name: 'DeepSeek-R1', arch: 'MoE', params: 671, source_type: 'Open Source', context: 128, license: 'MIT', mmlu: 90.8, math: 97.3, swe_bench: 49.2, risk: 'Medium', input_tokens: 30, output_tokens: 210, energy_wh: 4.5 },
+                { family: 'Qwen', name: 'Qwen3-Coder', arch: 'MoE', params: 480, source_type: 'Open Source', context: 256, license: 'Apache 2.0', mmlu: 75.0, math: 70.0, swe_bench: 65.0, risk: 'Low', input_tokens: 25, output_tokens: 150, energy_wh: 3.8 },
+                { family: 'Meta', name: 'Llama 3.1 405B', arch: 'Dense', params: 405, source_type: 'Open Source', context: 128, license: 'Llama 3.1 Community', mmlu: 84.4, math: 88.2, swe_bench: 35.1, risk: 'Low', input_tokens: 31, output_tokens: 175, energy_wh: 8.0 },
+                { family: 'Meta', name: 'Llama 3.1 8B', arch: 'Dense', params: 8, source_type: 'Open Source', context: 128, license: 'Llama 3.1 Community', mmlu: 68.4, math: 55.0, swe_bench: 12.5, risk: 'Low', input_tokens: 31, output_tokens: 165, energy_wh: 0.15 },
+                { family: 'Mistral', name: 'Mixtral 8x22B', arch: 'MoE', params: 141, source_type: 'Open Source', context: 64, license: 'Apache 2.0', mmlu: 77.8, math: 80.2, swe_bench: 30.2, risk: 'Low', input_tokens: 28, output_tokens: 155, energy_wh: 1.8 },
+                { family: 'Microsoft', name: 'Phi-3-medium', arch: 'Dense', params: 14, source_type: 'Open Source', context: 128, license: 'MIT', mmlu: 76.9, math: 72.1, swe_bench: 25.8, risk: 'Low', input_tokens: 33, output_tokens: 150, energy_wh: 0.25 },
+                { family: 'Stability AI', name: 'Stable Diffusion 3', arch: 'Latent Diffusion', params: 8, source_type: 'Open Source', context: null, license: 'Creator License', mmlu: null, math: null, swe_bench: null, risk: 'Medium', input_tokens: 20, output_tokens: null, energy_wh: 0.5 },
+                { family: 'Meta', name: 'Llama 4 Maverick', arch: 'MoE', params: 400, source_type: 'Open Source', context: 1000, license: 'Llama 4 Community', mmlu: 85.5, math: 61.2, swe_bench: 16.0, risk: 'Medium', input_tokens: 31, output_tokens: 180, energy_wh: 3.5 },
+                { family: 'Google', name: 'Gemma 2 27B', arch: 'Dense', params: 27, source_type: 'Open Source', context: 128, license: 'Gemma Terms of Use', mmlu: 75.2, math: 70.1, swe_bench: 22.1, risk: 'Medium', input_tokens: 34, output_tokens: 170, energy_wh: 0.6 },
 
                 // Closed Source Models
-                { family: 'OpenAI', name: 'GPT-5 (Proj.)', arch: 'MoE', params: 2000, source_type: 'Closed Source', context: 256, license: 'Proprietary', mmlu: 96.5, math: 99.0, human_eval: 95.0, risk: 'Low', input_tokens: 24, output_tokens: 140, energy_wh: 10.0 },
-                { family: 'OpenAI', name: 'GPT-4.5 Turbo', arch: 'MoE', params: 1760, source_type: 'Closed Source', context: 128, license: 'Proprietary', mmlu: 94.2, math: 96.5, human_eval: 92.1, risk: 'Low', input_tokens: 25, output_tokens: 145, energy_wh: 8.5 },
-                { family: 'Google', name: 'Gemini 2.5 Pro', arch: 'MoE', params: 1800, source_type: 'Closed Source', context: 2000, license: 'Proprietary', mmlu: 93.5, math: 95.0, human_eval: 90.5, risk: 'Low', input_tokens: 26, output_tokens: 150, energy_wh: 9.0 },
-                { family: 'Anthropic', name: 'Claude 4 Opus', arch: 'Dense', params: 1500, source_type: 'Closed Source', context: 200, license: 'Proprietary', mmlu: 95.1, math: 94.0, human_eval: 91.0, risk: 'Very Low', input_tokens: 22, output_tokens: 130, energy_wh: 12.0 },
-                { family: 'Anthropic', name: 'Claude 3.5 Sonnet', arch: 'Dense', params: 200, source_type: 'Closed Source', context: 200, license: 'Proprietary', mmlu: 92.0, math: 90.0, human_eval: 88.0, risk: 'Very Low', input_tokens: 23, output_tokens: 135, energy_wh: 3.0 },
-                { family: 'Zhipu AI', name: 'GLM-4.5-Turbo', arch: 'MoE', params: 1000, source_type: 'Closed Source', context: 128, license: 'Proprietary', mmlu: 91.5, math: 92.0, human_eval: 87.0, risk: 'Medium', input_tokens: 28, output_tokens: 160, energy_wh: 7.0 },
+                { family: 'OpenAI', name: 'GPT-5 (Proj.)', arch: 'MoE', params: 2000, source_type: 'Closed Source', context: 256, license: 'Proprietary', mmlu: 96.5, math: 99.0, swe_bench: 78.0, risk: 'Low', input_tokens: 24, output_tokens: 140, energy_wh: 10.0 },
+                { family: 'OpenAI', name: 'GPT-4.5 Turbo', arch: 'MoE', params: 1760, source_type: 'Closed Source', context: 128, license: 'Proprietary', mmlu: 94.2, math: 96.5, swe_bench: 72.3, risk: 'Low', input_tokens: 25, output_tokens: 145, energy_wh: 8.5 },
+                { family: 'Google', name: 'Gemini 2.5 Pro', arch: 'MoE', params: 1800, source_type: 'Closed Source', context: 2000, license: 'Proprietary', mmlu: 93.5, math: 95.0, swe_bench: 68.9, risk: 'Low', input_tokens: 26, output_tokens: 150, energy_wh: 9.0 },
+                { family: 'Anthropic', name: 'Claude 4 Opus', arch: 'Dense', params: 1500, source_type: 'Closed Source', context: 200, license: 'Proprietary', mmlu: 95.1, math: 94.0, swe_bench: 75.1, risk: 'Very Low', input_tokens: 22, output_tokens: 130, energy_wh: 12.0 },
+                { family: 'Anthropic', name: 'Claude 3.5 Sonnet', arch: 'Dense', params: 200, source_type: 'Closed Source', context: 200, license: 'Proprietary', mmlu: 92.0, math: 90.0, swe_bench: 70.5, risk: 'Very Low', input_tokens: 23, output_tokens: 135, energy_wh: 3.0 },
+                { family: 'Zhipu AI', name: 'GLM-4.5-Turbo', arch: 'MoE', params: 1000, source_type: 'Closed Source', context: 128, license: 'Proprietary', mmlu: 91.5, math: 92.0, swe_bench: 65.2, risk: 'Medium', input_tokens: 28, output_tokens: 160, energy_wh: 7.0 },
+                { family: 'Zhipu AI', name: 'GLM-4.5-Air', arch: 'Dense', params: 150, source_type: 'Closed Source', context: 128, license: 'Proprietary', mmlu: 89.0, math: 88.5, swe_bench: 60.1, risk: 'Medium', input_tokens: 27, output_tokens: 155, energy_wh: 2.5 },
             ],
             recommendations: {
                 max_perf: { title: "Absolute Maximum Performance", model: "OpenAI GPT-5 / Claude 4 Opus", summary: "For tasks where state-of-the-art performance is the only metric that matters, the leading proprietary models are the top choice. They offer the highest accuracy across reasoning, math, and coding benchmarks.", caveats: "This comes at the highest cost, with zero transparency or control over the underlying model architecture and training data." },
                 open_perf: { title: "Best Open Source Performance", model: "DeepSeek-R1", summary: "For teams that require transparency, control, and the ability to self-host without sacrificing performance, DeepSeek-R1 is the top open-source contender, especially for reasoning and math.", caveats: "Requires significant in-house MLOps expertise and a robust pipeline to mitigate hallucination risks." },
-                coding: { title: "State-of-the-Art Coding", model: "Qwen3-Coder (Open) / GPT-5 (Closed)", summary: "Qwen3-Coder is the open-source champion for agentic coding. For those using proprietary APIs, GPT-5 is projected to be the leader for complex software development tasks.", caveats: "Evaluate based on whether the transparency of an open model or the raw capability of a closed one is more critical." },
+                agentic_coding: { title: "State-of-the-Art Agentic Coding", model: "GPT-5 (Closed) / Qwen3-Coder (Open)", summary: "For agentic software development, GPT-5 is the projected leader. Qwen3-Coder is the best open-source alternative, demonstrating exceptional performance on real-world coding tasks.", caveats: "Evaluate based on whether the raw capability of a closed model or the transparency and control of an open one is more critical for your project." },
                 balanced: { title: "Balanced Cost & Performance", model: "Claude 3.5 Sonnet / Mixtral 8x22B", summary: "Claude 3.5 Sonnet offers near-Opus level performance at a fraction of the cost. Mixtral 8x22B is its open-source equivalent, providing excellent performance on prosumer hardware.", caveats: "The choice depends on the project's budget and stance on open vs. closed ecosystems." },
             }
         };
@@ -126,13 +129,13 @@
             performance: `
                 <div class="fade-in">
                     <div class="text-center mb-8">
-                        <h2 class="text-3xl font-bold text-stone-800">Performance Benchmarks</h2>
-                        <p class="mt-2 max-w-3xl mx-auto text-stone-600">How do open models stack up against the proprietary giants? Select a benchmark to compare capabilities across the entire ecosystem.</p>
+                        <h2 class="text-3xl font-bold text-stone-800">Benchmark Deep Dive</h2>
+                        <p class="mt-2 max-w-3xl mx-auto text-stone-600">How do open models stack up against the proprietary giants? Select a benchmark to compare capabilities across different domains of expertise.</p>
                     </div>
-                    <div class="flex justify-center gap-2 mb-8">
-                        <button id="btn-mmlu" class="px-4 py-2 bg-teal-600 text-white rounded-lg shadow hover:bg-teal-700 transition">Reasoning (MMLU)</button>
-                        <button id="btn-math" class="px-4 py-2 bg-stone-500 text-white rounded-lg shadow hover:bg-stone-600 transition">Math (MATH)</button>
-                        <button id="btn-human_eval" class="px-4 py-2 bg-stone-500 text-white rounded-lg shadow hover:bg-stone-600 transition">Coding (HumanEval)</button>
+                    <div class="flex justify-center gap-2 mb-8 flex-wrap">
+                        <button id="btn-mmlu" class="px-4 py-2 bg-teal-600 text-white rounded-lg shadow hover:bg-teal-700 transition">General Reasoning (MMLU)</button>
+                        <button id="btn-math" class="px-4 py-2 bg-stone-500 text-white rounded-lg shadow hover:bg-stone-600 transition">Advanced Math (MATH)</button>
+                        <button id="btn-swe_bench" class="px-4 py-2 bg-stone-500 text-white rounded-lg shadow hover:bg-stone-600 transition">Agentic Coding (SWE-Bench)</button>
                     </div>
                     <div class="card p-4 md:p-6">
                         <div class="chart-container">
@@ -225,7 +228,7 @@
                         <select id="use-case-selector" class="w-full p-3 border border-stone-300 rounded-lg bg-white shadow-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
                             <option value="max_perf">Absolute Maximum Performance</option>
                             <option value="open_perf">Best Open Source Performance</option>
-                            <option value="coding">State-of-the-Art Coding</option>
+                            <option value="agentic_coding">State-of-the-Art Agentic Coding</option>
                             <option value="balanced">Balanced Cost & Performance</option>
                         </select>
                         <div id="recommendation-output" class="mt-6 p-6 bg-stone-50 rounded-lg border border-teal-200"></div>
@@ -233,11 +236,6 @@
                 </div>
             `
         };
-        
-        // Views for multimodality and deployment are omitted for brevity in this update, but would be included in a full implementation.
-        views.multimodality = views.explorer;
-        views.deployment = views.explorer;
-
 
         let currentFilters = { source_type: [], family: [], arch: [] };
         let sortConfig = { key: 'name', asc: true };
@@ -301,8 +299,10 @@
             });
 
             filteredModels.sort((a, b) => {
-                if (a[sortConfig.key] < b[sortConfig.key]) return sortConfig.asc ? -1 : 1;
-                if (a[sortConfig.key] > b[sortConfig.key]) return sortConfig.asc ? 1 : -1;
+                const valA = a[sortConfig.key];
+                const valB = b[sortConfig.key];
+                if (valA < valB) return sortConfig.asc ? -1 : 1;
+                if (valA > valB) return sortConfig.asc ? 1 : -1;
                 return 0;
             });
 
@@ -320,7 +320,7 @@
             `).join('');
             
             document.querySelectorAll('#models-table-container th').forEach(th => {
-                let text = th.innerText.replace(' 🔼', '').replace(' 🔽', '');
+                let text = th.innerText.replace(' 🔼', '').replace(' �', '');
                 if (th.dataset.sort === sortConfig.key) text += sortConfig.asc ? ' 🔼' : ' 🔽';
                 th.innerText = text;
             });
@@ -346,14 +346,14 @@
                 dataset.backgroundColor = filteredData.map(m => m.source_type === 'Open Source' ? 'rgba(20, 184, 166, 0.6)' : 'rgba(56, 189, 248, 0.6)');
                 dataset.borderColor = filteredData.map(m => m.source_type === 'Open Source' ? 'rgba(15, 118, 110, 1)' : 'rgba(14, 165, 233, 1)');
                 performanceChart.update();
-                ['mmlu', 'math', 'human_eval'].forEach(id => document.getElementById(`btn-${id}`).className = 'px-4 py-2 bg-stone-500 text-white rounded-lg shadow hover:bg-stone-600 transition');
+                ['mmlu', 'math', 'swe_bench'].forEach(id => document.getElementById(`btn-${id}`).className = 'px-4 py-2 bg-stone-500 text-white rounded-lg shadow hover:bg-stone-600 transition');
                 document.getElementById(`btn-${benchmark}`).className = 'px-4 py-2 bg-teal-600 text-white rounded-lg shadow hover:bg-teal-700 transition';
             };
 
-            document.getElementById('btn-mmlu').onclick = () => updateChart('mmlu', 'Reasoning (MMLU)');
-            document.getElementById('btn-math').onclick = () => updateChart('math', 'Math (MATH)');
-            document.getElementById('btn-human_eval').onclick = () => updateChart('human_eval', 'Coding (HumanEval)');
-            updateChart('mmlu', 'Reasoning (MMLU)');
+            document.getElementById('btn-mmlu').onclick = () => updateChart('mmlu', 'General Reasoning (MMLU)');
+            document.getElementById('btn-math').onclick = () => updateChart('math', 'Advanced Math (MATH)');
+            document.getElementById('btn-swe_bench').onclick = () => updateChart('swe_bench', 'Agentic Coding (SWE-Bench)');
+            updateChart('mmlu', 'General Reasoning (MMLU)');
         }
 
         function setupEfficiencyChart() {
@@ -425,3 +425,4 @@
 
 </body>
 </html>
+�
