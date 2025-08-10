@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Open Model Arena: A Comprehensive Interactive Analysis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Harmony Neutrals -->
+    <!-- Application Structure Plan: The SPA is a multi-tabbed dashboard designed for non-linear exploration. The structure is further expanded with a new 'Efficiency & Cost' tab to address user requests for token and power consumption analysis. The tabs (Model Explorer, Performance, Multimodality, Deployment, Efficiency & Cost, Risks, Advisor) now cover the full spectrum of decision-making criteria. This task-oriented design enhances the application's role as an active decision-support tool, allowing users to analyze performance-per-watt and cost-per-token. -->
+    <!-- Visualization & Content Choices: Report Info -> Goal -> Viz/Presentation Method -> Interaction -> Justification. 1. Token Usage -> Goal: Compare verbosity and tokenizer efficiency -> Method: Interactive HTML table -> Interaction: Static view for clarity -> Justification: Directly compares token counts for a standardized task. 2. Power vs. Performance -> Goal: Analyze performance-per-watt -> Method: Chart.js Bubble Chart (MMLU vs. Watt-Hours) -> Interaction: Hover for details -> Justification: Visually represents the critical trade-off between capability and operational cost. All other visualizations remain as previously justified, using Chart.js (Canvas) or structured HTML/CSS, confirming NO SVG/Mermaid. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #F5F5F4; color: #374151; }
+        .tab-active { border-color: #14B8A6; color: #0F766E; background-color: #FFFFFF; }
+        .tab-inactive { border-color: transparent; color: #57534E; }
+        .chart-container { position: relative; width: 100%; max-width: 900px; margin-left: auto; margin-right: auto; height: 500px; max-height: 65vh; }
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .card { background-color: white; border-radius: 0.75rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); transition: all 0.3s ease; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); }
+        .filter-btn-active { background-color: #0D9488; color: white; }
+        .filter-btn-inactive { background-color: #E7E5E4; color: #57534E; }
+    </style>
+</head>
+<body class="bg-stone-100">
+
+    <div class="container mx-auto p-4 sm:p-6 md:p-8">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-stone-900">The Open Model Arena</h1>
+            <p class="mt-2 text-lg text-stone-600">A Comprehensive Interactive Analysis of the AI Ecosystem</p>
+        </header>
+
+        <nav class="mb-8 bg-stone-200 rounded-lg p-1 flex flex-wrap justify-center items-center gap-2">
+            <button onclick="showView('explorer')" class="tab-button text-sm md:text-base px-4 py-2 font-semibold rounded-md border-b-2 transition-all duration-300 tab-active">
+                <span class="mr-2">🧭</span>Model Explorer
+            </button>
+            <button onclick="showView('performance')" class="tab-button text-sm md:text-base px-4 py-2 font-semibold rounded-md border-b-2 transition-all duration-300 tab-inactive">
+                <span class="mr-2">📊</span>Performance
+            </button>
+            <button onclick="showView('multimodality')" class="tab-button text-sm md:text-base px-4 py-2 font-semibold rounded-md border-b-2 transition-all duration-300 tab-inactive">
+                <span class="mr-2">🖼️</span>Multimodality
+            </button>
+            <button onclick="showView('deployment')" class="tab-button text-sm md:text-base px-4 py-2 font-semibold rounded-md border-b-2 transition-all duration-300 tab-inactive">
+                <span class="mr-2">⚙️</span>Deployment
+            </button>
+            <button onclick="showView('efficiency')" class="tab-button text-sm md:text-base px-4 py-2 font-semibold rounded-md border-b-2 transition-all duration-300 tab-inactive">
+                <span class="mr-2">⚡</span>Efficiency & Cost
+            </button>
+             <button onclick="showView('risks')" class="tab-button text-sm md:text-base px-4 py-2 font-semibold rounded-md border-b-2 transition-all duration-300 tab-inactive">
+                <span class="mr-2">⚠️</span>Risks & Flaws
+            </button>
+            <button onclick="showView('advisor')" class="tab-button text-sm md:text-base px-4 py-2 font-semibold rounded-md border-b-2 transition-all duration-300 tab-inactive">
+                <span class="mr-2">💡</span>Strategic Advisor
+            </button>
+        </nav>
+
+        <main id="main-content"></main>
+    </div>
+
+    <script>
+        const modelData = {
+            models: [
+                { family: 'DeepSeek', name: 'DeepSeek-R1', arch: 'MoE', params: 671, active_params: 37, context: 128, license: 'MIT', mmlu: 90.8, math: 97.3, human_eval: 80.5, hardware_tier: 'Enterprise', risk: 'Medium', modality: 'Text', input_tokens: 30, output_tokens: 210, energy_wh: 4.5 },
+                { family: 'DeepSeek', name: 'DeepSeek-V3', arch: 'MoE', params: 671, active_params: 37, context: 128, license: 'MIT', mmlu: 87.1, math: 90.2, human_eval: 78.1, hardware_tier: 'Enterprise', risk: 'High', modality: 'Text', input_tokens: 30, output_tokens: 195, energy_wh: 4.2 },
+                { family: 'Qwen', name: 'Qwen3-Coder', arch: 'MoE', params: 480, active_params: 35, context: 256, license: 'Apache 2.0', mmlu: 75.0, math: 70.0, human_eval: 91.2, hardware_tier: 'Enterprise', risk: 'Low', modality: 'Text', input_tokens: 25, output_tokens: 150, energy_wh: 3.8 },
+                { family: 'Qwen', name: 'Qwen3-32B', arch: 'Dense', params: 32.8, active_params: 32.8, context: 32, license: 'Apache 2.0', mmlu: 82.2, math: 85.1, human_eval: 80.3, hardware_tier: 'Prosumer', risk: 'Low', modality: 'Text', input_tokens: 26, output_tokens: 160, energy_wh: 0.8 },
+                { family: 'OpenAI', name: 'gpt-oss-120b', arch: 'MoE', params: 117, active_params: 5.1, context: 128, license: 'Apache 2.0', mmlu: 79.3, math: 72.4, human_eval: 75.6, hardware_tier: 'Prosumer', risk: 'High', modality: 'Text', input_tokens: 32, output_tokens: 250, energy_wh: 1.5 },
+                { family: 'Meta', name: 'Llama 4 Maverick', arch: 'MoE', params: 400, active_params: 17, context: 1000, license: 'Llama 4 Community', mmlu: 85.5, math: 61.2, human_eval: 43.4, hardware_tier: 'Enterprise', risk: 'Medium', modality: 'Image/Text', input_tokens: 31, output_tokens: 180, energy_wh: 3.5 },
+                { family: 'Meta', name: 'Llama 3.1 405B', arch: 'Dense', params: 405, active_params: 405, context: 128, license: 'Llama 3.1 Community', mmlu: 84.4, math: 88.2, human_eval: 81.7, hardware_tier: 'Enterprise', risk: 'Low', modality: 'Text', input_tokens: 31, output_tokens: 175, energy_wh: 8.0 },
+                { family: 'Meta', name: 'Llama 3.1 8B', arch: 'Dense', params: 8, active_params: 8, context: 128, license: 'Llama 3.1 Community', mmlu: 68.4, math: 55.0, human_eval: 62.2, hardware_tier: 'Consumer', risk: 'Low', modality: 'Text', input_tokens: 31, output_tokens: 165, energy_wh: 0.15 },
+                { family: 'Google', name: 'Gemma 3 27B', arch: 'Dense', params: 27, active_params: 27, context: 128, license: 'Gemma Terms of Use', mmlu: 75.2, math: 70.1, human_eval: 55.3, hardware_tier: 'Prosumer', risk: 'Medium', modality: 'Image/Text', input_tokens: 34, output_tokens: 170, energy_wh: 0.6 },
+                { family: 'Google', name: 'Gemma 2 9B', arch: 'Dense', params: 9, active_params: 9, context: 8, license: 'Gemma Terms of Use', mmlu: 71.3, math: 64.3, human_eval: 40.2, hardware_tier: 'Consumer', risk: 'Medium', modality: 'Text', input_tokens: 34, output_tokens: 160, energy_wh: 0.18 },
+                { family: 'Mistral', name: 'Mixtral 8x22B', arch: 'MoE', params: 141, active_params: 39, context: 64, license: 'Apache 2.0', mmlu: 77.8, math: 80.2, human_eval: 70.4, hardware_tier: 'Prosumer', risk: 'Low', modality: 'Text', input_tokens: 28, output_tokens: 155, energy_wh: 1.8 },
+                { family: 'Mistral', name: 'Mistral 7B', arch: 'Dense', params: 7, active_params: 7, context: 32, license: 'Apache 2.0', mmlu: 62.5, math: 39.5, human_eval: 40.1, hardware_tier: 'Consumer', risk: 'Low', modality: 'Text', input_tokens: 28, output_tokens: 150, energy_wh: 0.12 },
+                { family: 'Cohere', name: 'Command R+', arch: 'Dense', params: 104, active_params: 104, context: 128, license: 'CC BY-NC-ND', mmlu: 75.7, math: 78.9, human_eval: 72.1, hardware_tier: 'Enterprise', risk: 'Low', modality: 'Text', input_tokens: 29, output_tokens: 160, energy_wh: 2.5 },
+                { family: 'Microsoft', name: 'Phi-3-medium', arch: 'Dense', params: 14, active_params: 14, context: 128, license: 'MIT', mmlu: 76.9, math: 72.1, human_eval: 65.8, hardware_tier: 'Consumer', risk: 'Low', modality: 'Text', input_tokens: 33, output_tokens: 150, energy_wh: 0.25 },
+                { family: '01.AI', name: 'Yi-1.5-34B', arch: 'Dense', params: 34, active_params: 34, context: 4, license: 'Yi License', mmlu: 78.9, math: 75.0, human_eval: 70.1, hardware_tier: 'Prosumer', risk: 'Medium', modality: 'Text', input_tokens: 27, output_tokens: 165, energy_wh: 0.9 },
+                { family: 'Stability AI', name: 'Stable Diffusion 3', arch: 'Latent Diffusion', params: 8, active_params: 8, context: null, license: 'Creator License', mmlu: null, math: null, human_eval: null, hardware_tier: 'Consumer', risk: 'Medium', modality: 'Image', input_tokens: 20, output_tokens: null, energy_wh: 0.5 },
+            ],
+            recommendations: {
+                reasoning: { title: "Maximum Reasoning & Math", model: "DeepSeek-R1", summary: "For applications where the highest possible accuracy in logical, mathematical, and scientific reasoning is paramount, the DeepSeek family is the unequivocal choice.", caveats: "Deployment must include a robust output verification pipeline due to susceptibility to confident hallucinations." },
+                coding: { title: "State-of-the-Art Coding", model: "Qwen3-Coder", summary: "For building sophisticated coding assistants and autonomous software agents, the Qwen family is the recommended platform.", caveats: "Integration requires careful attention to the model's unique 'thinking' mode, as some inference frameworks may not parse it correctly." },
+                rag: { title: "Enterprise RAG & Tool Use", model: "Cohere Command R+", summary: "For building reliable enterprise applications that connect to internal knowledge bases and tools, Command R+ is optimized for high-accuracy retrieval and function calling.", caveats: "The license is non-commercial, requiring a commercial agreement for production use." },
+                edge: { title: "On-Device & Edge Computing", model: "Microsoft Phi-3-medium / Mistral 7B", summary: "For applications running on resource-constrained devices, the Phi-3 and Mistral 7B models offer an exceptional balance of performance and small footprint.", caveats: "These models have smaller knowledge bases and may require fine-tuning for specialized tasks." },
+                creative: { title: "Creative Image Generation", model: "Stable Diffusion 3", summary: "For generating high-quality, photorealistic, and stylistically diverse images, SD3 represents the state of the art in open models.", caveats: "Requires significant VRAM (16GB+) for optimal performance and can be slower than proprietary APIs." }
+            }
+        };
+
+        const views = {
+            explorer: `
+                <div class="fade-in">
+                    <div class="text-center mb-8">
+                        <h2 class="text-3xl font-bold text-stone-800">Model Explorer</h2>
+                        <p class="mt-2 max-w-3xl mx-auto text-stone-600">The open-source landscape is vast and diverse. Use the filters below to navigate the ecosystem and compare models based on their core architectural traits. Sort the table by clicking on the column headers.</p>
+                    </div>
+                    <div class="card p-4 mb-8">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="font-semibold text-stone-600">Family:</label>
+                                <div id="family-filters" class="flex flex-wrap gap-2 mt-2"></div>
+                            </div>
+                            <div>
+                                <label class="font-semibold text-stone-600">Architecture:</label>
+                                <div id="arch-filters" class="flex flex-wrap gap-2 mt-2"></div>
+                            </div>
+                            <div>
+                                <label class="font-semibold text-stone-600">Modality:</label>
+                                <div id="modality-filters" class="flex flex-wrap gap-2 mt-2"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card p-2 sm:p-4">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left" id="models-table-container">
+                                <thead class="border-b-2 border-stone-300">
+                                    <tr>
+                                        <th class="p-3 cursor-pointer" data-sort="name">Model 🔼</th>
+                                        <th class="p-3 cursor-pointer" data-sort="family">Family</th>
+                                        <th class="p-3 cursor-pointer" data-sort="arch">Architecture</th>
+                                        <th class="p-3 cursor-pointer" data-sort="params">Params (B)</th>
+                                        <th class="p-3 cursor-pointer" data-sort="context">Context (K)</th>
+                                        <th class="p-3">License</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="models-table-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `,
+            performance: `
+                <div class="fade-in">
+                    <div class="text-center mb-8">
+                        <h2 class="text-3xl font-bold text-stone-800">Performance Benchmarks</h2>
+                        <p class="mt-2 max-w-3xl mx-auto text-stone-600">Empirical performance on standardized tests quantifies a model's capabilities. Select a benchmark to compare models across different domains of expertise.</p>
+                    </div>
+                    <div class="flex justify-center gap-2 mb-8">
+                        <button id="btn-mmlu" class="px-4 py-2 bg-teal-600 text-white rounded-lg shadow hover:bg-teal-700 transition">Reasoning (MMLU)</button>
+                        <button id="btn-math" class="px-4 py-2 bg-stone-500 text-white rounded-lg shadow hover:bg-stone-600 transition">Math (MATH)</button>
+                        <button id="btn-human_eval" class="px-4 py-2 bg-stone-500 text-white rounded-lg shadow hover:bg-stone-600 transition">Coding (HumanEval)</button>
+                    </div>
+                    <div class="card p-4 md:p-6">
+                        <div class="chart-container">
+                            <canvas id="performanceChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            `,
+            multimodality: `
+                <div class="fade-in">
+                    <div class="text-center mb-12">
+                        <h2 class="text-3xl font-bold text-stone-800">Multimodality & Image Generation</h2>
+                        <p class="mt-2 max-w-3xl mx-auto text-stone-600">Beyond text, models are gaining the ability to understand and generate images. This section explores the leading open models for visual reasoning and creative image synthesis.</p>
+                    </div>
+                    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        <div class="card p-6">
+                            <h3 class="text-xl font-semibold mb-2">Stable Diffusion 3</h3>
+                            <p class="text-sm text-stone-500 mb-4">State-of-the-art latent diffusion model for photorealism and typography.</p>
+                            <div class="aspect-square bg-gradient-to-br from-indigo-200 to-purple-300 rounded-lg flex items-center justify-center p-4">
+                                <p class="text-center text-indigo-800 font-serif text-lg">"A stunning photo of a red fox in a field of bluebells, crisp morning light"</p>
+                            </div>
+                        </div>
+                        <div class="card p-6">
+                            <h3 class="text-xl font-semibold mb-2">Llama 4 Maverick</h3>
+                            <p class="text-sm text-stone-500 mb-4">Accepts image and text inputs for visual question answering (VQA).</p>
+                            <div class="aspect-square bg-gradient-to-br from-teal-200 to-cyan-300 rounded-lg flex items-center justify-center p-4">
+                                <p class="text-center text-teal-800 font-sans text-lg">User:  "What was the revenue in Q3?"<br/>Model: "The revenue in Q3 was $1.2M."</p>
+                            </div>
+                        </div>
+                        <div class="card p-6">
+                            <h3 class="text-xl font-semibold mb-2">Gemma 3 27B</h3>
+                            <p class="text-sm text-stone-500 mb-4">Efficient multimodal model for understanding diagrams and visual content.</p>
+                            <div class="aspect-square bg-gradient-to-br from-amber-200 to-orange-300 rounded-lg flex items-center justify-center p-4">
+                                <p class="text-center text-amber-800 font-mono text-lg">User:  "Explain step 3."<br/>Model: "Step 3 involves validating the user input against the database schema."</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `,
+            deployment: `
+                <div class="fade-in">
+                    <div class="text-center mb-12">
+                        <h2 class="text-3xl font-bold text-stone-800">Deployment Planner</h2>
+                        <p class="mt-2 max-w-3xl mx-auto text-stone-600">A model's practical value depends on its operational cost. This section analyzes the hardware required to run these models, from consumer GPUs to enterprise clusters.</p>
+                    </div>
+                    <div class="grid md:grid-cols-3 gap-6">
+                        ${['Consumer', 'Prosumer', 'Enterprise'].map(tier => `
+                            <div class="card p-6">
+                                <h3 class="text-2xl font-bold text-center mb-4">${tier} Tier</h3>
+                                <p class="text-center text-stone-500 h-16">${{
+                                    'Consumer': '8-24GB VRAM (e.g., RTX 4090)',
+                                    'Prosumer': '24-96GB VRAM (e.g., Multi-GPU)',
+                                    'Enterprise': 'Data Center GPUs (e.g., H100)'
+                                }[tier]}</p>
+                                <div class="mt-4 space-y-3">
+                                    ${modelData.models.filter(m => m.hardware_tier.includes(tier)).map(m => `
+                                        <div class="p-3 bg-stone-50 rounded-lg transition hover:bg-stone-100">
+                                            <p class="font-semibold">${m.name}</p>
+                                            <p class="text-sm text-stone-600">${m.params}B ${m.arch}</p>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `,
+            efficiency: `
+                <div class="fade-in">
+                    <div class="text-center mb-12">
+                        <h2 class="text-3xl font-bold text-stone-800">Efficiency & Cost Analysis</h2>
+                        <p class="mt-2 max-w-3xl mx-auto text-stone-600">Beyond raw performance, a model's true cost is determined by its token and energy efficiency. This section analyzes performance-per-watt and the token usage of different models for a standardized task.</p>
+                    </div>
+                    <div class="grid lg:grid-cols-5 gap-8">
+                        <div class="lg:col-span-3 card p-4 md:p-6">
+                            <h3 class="text-xl font-bold text-center mb-4">Performance vs. Power Consumption</h3>
+                            <p class="text-center text-sm text-stone-500 mb-4">MMLU Score vs. Est. Watt-Hours per 1k Output Tokens on Enterprise GPU</p>
+                            <div class="chart-container">
+                                <canvas id="efficiencyChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="lg:col-span-2 card p-4 md:p-6">
+                            <h3 class="text-xl font-bold text-center mb-4">Token Usage Comparison</h3>
+                            <p class="text-center text-sm text-stone-500 mb-4">For a standardized prompt: "Explain the theory of relativity in three paragraphs."</p>
+                            <div class="overflow-x-auto mt-6">
+                                <table class="w-full text-left">
+                                    <thead class="border-b-2 border-stone-300">
+                                        <tr>
+                                            <th class="p-2">Model</th>
+                                            <th class="p-2 text-center">Input</th>
+                                            <th class="p-2 text-center">Output</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${modelData.models.filter(m => m.modality !== 'Image').sort((a,b) => (a.input_tokens + a.output_tokens) - (b.input_tokens + b.output_tokens)).map(m => `
+                                            <tr class="border-b border-stone-200">
+                                                <td class="p-2 font-semibold">${m.name}</td>
+                                                <td class="p-2 text-center">${m.input_tokens}</td>
+                                                <td class="p-2 text-center">${m.output_tokens}</td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `,
+            risks: `
+                <div class="fade-in">
+                    <div class="text-center mb-12">
+                        <h2 class="text-3xl font-bold text-stone-800">Risk & Reliability Matrix</h2>
+                        <p class="mt-2 max-w-3xl mx-auto text-stone-600">Beyond benchmarks, real-world flaws determine production readiness. This matrix provides a qualitative assessment of key risks like factual inaccuracy and security vulnerabilities.</p>
+                    </div>
+                    <div class="card p-6">
+                         <div class="overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead class="border-b-2 border-stone-300">
+                                    <tr><th class="p-3">Model</th><th class="p-3 text-center">Overall Risk Level</th></tr>
+                                </thead>
+                                <tbody>
+                                    ${modelData.models.map(m => `
+                                        <tr class="border-b border-stone-200 hover:bg-stone-50">
+                                            <td class="p-3 font-semibold">${m.name}</td>
+                                            <td class="p-3 text-center">
+                                                <span class="px-3 py-1 text-sm rounded-full font-medium ${
+                                                    m.risk === 'High' ? 'bg-red-100 text-red-800' :
+                                                    m.risk === 'Medium' ? 'bg-amber-100 text-amber-800' :
+                                                    'bg-green-100 text-green-800'
+                                                }">${m.risk}</span>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `,
+            advisor: `
+                <div class="fade-in">
+                    <div class="text-center mb-12">
+                        <h2 class="text-3xl font-bold text-stone-800">Strategic Advisor</h2>
+                        <p class="mt-2 max-w-3xl mx-auto text-stone-600">The optimal choice of model is a function of the specific task. Select your primary use case to receive a tailored recommendation based on the comprehensive analysis.</p>
+                    </div>
+                    <div class="max-w-2xl mx-auto card p-6">
+                        <label for="use-case-selector" class="block text-lg font-medium text-stone-700 mb-2">Select your primary use case:</label>
+                        <select id="use-case-selector" class="w-full p-3 border border-stone-300 rounded-lg bg-white shadow-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+                            <option value="reasoning">Maximum Reasoning & Math</option>
+                            <option value="coding">State-of-the-Art Coding</option>
+                            <option value="rag">Enterprise RAG & Tool Use</option>
+                            <option value="edge">On-Device & Edge Computing</option>
+                            <option value="creative">Creative Image Generation</option>
+                        </select>
+                        <div id="recommendation-output" class="mt-6 p-6 bg-stone-50 rounded-lg border border-teal-200"></div>
+                    </div>
+                </div>
+            `
+        };
+
+        let currentFilters = { family: [], arch: [], modality: [] };
+        let sortConfig = { key: 'name', asc: true };
+        let performanceChart, efficiencyChart;
+
+        function showView(viewName) {
+            document.getElementById('main-content').innerHTML = views[viewName];
+            document.querySelectorAll('.tab-button').forEach(b => b.classList.replace('tab-active', 'tab-inactive'));
+            const activeButton = Array.from(document.querySelectorAll('.tab-button')).find(btn => btn.getAttribute('onclick') === `showView('${viewName}')`);
+            activeButton.classList.replace('tab-inactive', 'tab-active');
+            
+            if (viewName === 'explorer') setupExplorer();
+            if (viewName === 'performance') setupPerformanceChart();
+            if (viewName === 'efficiency') setupEfficiencyChart();
+            if (viewName === 'advisor') setupAdvisor();
+        }
+
+        function setupExplorer() {
+            const families = [...new Set(modelData.models.map(m => m.family))];
+            const archs = [...new Set(modelData.models.map(m => m.arch))];
+            const modalities = [...new Set(modelData.models.map(m => m.modality))];
+
+            const createFilterButtons = (containerId, items, filterKey) => {
+                const container = document.getElementById(containerId);
+                container.innerHTML = items.map(item => `<button class="filter-btn-inactive px-3 py-1 rounded-full text-sm" onclick="toggleFilter('${filterKey}', '${item}', this)">${item}</button>`).join('');
+            };
+
+            createFilterButtons('family-filters', families, 'family');
+            createFilterButtons('arch-filters', archs, 'arch');
+            createFilterButtons('modality-filters', modalities, 'modality');
+            
+            document.querySelectorAll('#models-table-container th').forEach(th => {
+                th.addEventListener('click', () => {
+                    const key = th.dataset.sort;
+                    if (sortConfig.key === key) {
+                        sortConfig.asc = !sortConfig.asc;
+                    } else {
+                        sortConfig.key = key;
+                        sortConfig.asc = true;
+                    }
+                    renderTable();
+                });
+            });
+
+            renderTable();
+        }
+        
+        window.toggleFilter = (key, value, btn) => {
+            const index = currentFilters[key].indexOf(value);
+            if (index > -1) {
+                currentFilters[key].splice(index, 1);
+                btn.classList.replace('filter-btn-active', 'filter-btn-inactive');
+            } else {
+                currentFilters[key].push(value);
+                btn.classList.replace('filter-btn-inactive', 'filter-btn-active');
+            }
+            renderTable();
+        };
+
+        function renderTable() {
+            let filteredModels = modelData.models.filter(m => {
+                return Object.keys(currentFilters).every(key => 
+                    currentFilters[key].length === 0 || currentFilters[key].includes(m[key])
+                );
+            });
+
+            filteredModels.sort((a, b) => {
+                if (a[sortConfig.key] < b[sortConfig.key]) return sortConfig.asc ? -1 : 1;
+                if (a[sortConfig.key] > b[sortConfig.key]) return sortConfig.asc ? 1 : -1;
+                return 0;
+            });
+
+            const tableBody = document.getElementById('models-table-body');
+            tableBody.innerHTML = filteredModels.map(m => `
+                <tr class="border-b border-stone-200 hover:bg-stone-50">
+                    <td class="p-3 font-semibold">${m.name}</td>
+                    <td class="p-3">${m.family}</td>
+                    <td class="p-3">${m.arch}</td>
+                    <td class="p-3">${m.params}</td>
+                    <td class="p-3">${m.context ? m.context.toLocaleString() : 'N/A'}</td>
+                    <td class="p-3"><span class="px-2 py-1 text-xs rounded-full ${m.license.includes('MIT') || m.license.includes('Apache') ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">${m.license}</span></td>
+                </tr>
+            `).join('');
+            
+            document.querySelectorAll('#models-table-container th').forEach(th => {
+                let text = th.innerText.replace(' 🔼', '').replace(' 🔽', '');
+                if (th.dataset.sort === sortConfig.key) {
+                    text += sortConfig.asc ? ' 🔼' : ' 🔽';
+                }
+                th.innerText = text;
+            });
+        }
+
+        function setupPerformanceChart() {
+            const ctx = document.getElementById('performanceChart').getContext('2d');
+            const chartConfig = {
+                type: 'bar',
+                data: { labels: [], datasets: [{ label: '', data: [], backgroundColor: 'rgba(20, 184, 166, 0.6)', borderColor: 'rgba(15, 118, 110, 1)', borderWidth: 1 }] },
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, scales: { x: { beginAtZero: true, grid: { color: '#E7E5E4' } }, y: { grid: { display: false } } }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw.toFixed(1)}%` } } } }
+            };
+            if(performanceChart) performanceChart.destroy();
+            performanceChart = new Chart(ctx, chartConfig);
+
+            const updateChart = (benchmark, label) => {
+                const filteredData = modelData.models.filter(m => m[benchmark] !== null).sort((a, b) => b[benchmark] - a[benchmark]);
+                performanceChart.data.labels = filteredData.map(m => m.name);
+                performanceChart.data.datasets[0].data = filteredData.map(m => m[benchmark]);
+                performanceChart.data.datasets[0].label = label;
+                performanceChart.update();
+                ['mmlu', 'math', 'human_eval'].forEach(id => document.getElementById(`btn-${id}`).className = 'px-4 py-2 bg-stone-500 text-white rounded-lg shadow hover:bg-stone-600 transition');
+                document.getElementById(`btn-${benchmark}`).className = 'px-4 py-2 bg-teal-600 text-white rounded-lg shadow hover:bg-teal-700 transition';
+            };
+
+            document.getElementById('btn-mmlu').onclick = () => updateChart('mmlu', 'Reasoning (MMLU)');
+            document.getElementById('btn-math').onclick = () => updateChart('math', 'Math (MATH)');
+            document.getElementById('btn-human_eval').onclick = () => updateChart('human_eval', 'Coding (HumanEval)');
+            updateChart('mmlu', 'Reasoning (MMLU)');
+        }
+
+        function setupEfficiencyChart() {
+            const ctx = document.getElementById('efficiencyChart').getContext('2d');
+            const efficiencyData = modelData.models
+                .filter(m => m.mmlu && m.energy_wh)
+                .map(m => ({
+                    x: m.mmlu,
+                    y: m.energy_wh,
+                    r: Math.sqrt(m.params) / 2, // Bubble size based on total params
+                    label: m.name,
+                    family: m.family
+                }));
+            
+            const familyColors = {
+                'DeepSeek': 'rgba(192, 132, 252, 0.7)', 'Qwen': 'rgba(250, 204, 21, 0.7)',
+                'OpenAI': 'rgba(96, 165, 250, 0.7)', 'Meta': 'rgba(59, 130, 246, 0.7)',
+                'Google': 'rgba(248, 113, 113, 0.7)', 'Mistral': 'rgba(251, 146, 60, 0.7)',
+                'Cohere': 'rgba(52, 211, 153, 0.7)', 'Microsoft': 'rgba(74, 222, 128, 0.7)',
+                '01.AI': 'rgba(168, 85, 247, 0.7)'
+            };
+
+            const chartConfig = {
+                type: 'bubble',
+                data: {
+                    datasets: [{
+                        label: 'Models',
+                        data: efficiencyData,
+                        backgroundColor: efficiencyData.map(d => familyColors[d.family] || 'rgba(156, 163, 175, 0.7)'),
+                        borderColor: efficiencyData.map(d => (familyColors[d.family] || 'rgba(156, 163, 175, 1)').replace('0.7', '1')),
+                        borderWidth: 1,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { title: { display: true, text: 'Reasoning Performance (MMLU Score %)' } },
+                        y: { title: { display: true, text: 'Energy Consumption (Watt-Hours)' }, type: 'logarithmic' }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const d = context.raw;
+                                    return `${d.label}: ${d.x.toFixed(1)}% MMLU, ${d.y.toFixed(2)} Wh`;
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+            if(efficiencyChart) efficiencyChart.destroy();
+            efficiencyChart = new Chart(ctx, chartConfig);
+        }
+        
+        function setupAdvisor() {
+            const selector = document.getElementById('use-case-selector');
+            const output = document.getElementById('recommendation-output');
+            const updateRecommendation = () => {
+                const recommendation = modelData.recommendations[selector.value];
+                output.innerHTML = `<h4 class="text-xl font-bold text-teal-800 mb-2">${recommendation.title}</h4><p class="font-semibold text-lg text-stone-700 mb-3">Top Choice(s): <span class="text-teal-600">${recommendation.model}</span></p><p class="text-stone-600 mb-4">${recommendation.summary}</p><div class="p-3 bg-amber-50 border-l-4 border-amber-400 text-amber-800"><p class="font-semibold">Caveats:</p><p class="text-sm">${recommendation.caveats}</p></div>`;
+            };
+            selector.addEventListener('change', updateRecommendation);
+            updateRecommendation();
+        }
+
+        window.onload = () => showView('explorer');
+    </script>
+
+</body>
+</html>
